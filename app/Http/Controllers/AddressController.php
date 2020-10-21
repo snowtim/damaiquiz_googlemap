@@ -14,24 +14,6 @@ class AddressController extends Controller
 {
     //***** Direct to /googlemap *****//
     public function index() {
-        /***** Join two tables and select data(right use, for test) *****/
-        /*$cityidselect = DB::table('cities')->select('id')->where('city', '=', '基隆市')->first();
-        $cityid = $cityidselect->id;
-        $filenameselect = DB::table('areas')->join('cities', 'areas.city_id', '=', 'cities.id')->select('areas.filename')->where('cities.id', '=', 1)->where('areas.area', '=', '中山區')->first();
-        $filename = $filenameselect->filename;
-        dd($filename);*/
-
-        /***** Catch city id use in table areas (Using for test) *****/
-        //$cityselect = DB::table('cities')->select('id')->where('city', '=', '桃園市')->first();
-        //dd($cityselect);
-        //$areas = Area::where('city_id', '=', $cityselect->id)->get();
-        //dd($areas);
-        //$response_areas = response()->json($areas);
-        /*$response_areas = response()->json([
-            'a' => 'a'
-        ]);*/
-        //dd($response_areas);
-
         $cities = City::all();
         $areas = Area::all();
 
@@ -40,7 +22,13 @@ class AddressController extends Controller
 
     //***** Get city data from front-end and return areas data(json) *****//
     public function citylinkarea(Request $request) {
-        $cityselect = DB::table('cities')->select('id')->where('city', '=', $request['city'])->first();
+        if(!isset($request->City)) {
+            return $response_areas = response()->json([
+                'error' => 'Has no value!'
+            ]);
+        }
+        
+        $cityselect = DB::table('cities')->select('id')->where('city', '=', $request['City'])->first();
         $areas = Area::where('city_id', '=', $cityselect->id)->get();
 
         /***** Test 1 *****/
@@ -86,31 +74,12 @@ class AddressController extends Controller
         /***** Connect become an address use into Google Geocode API *****/
         $addressintoapi = trim($city.$area.$road.$lane.$alley.$no.$floor);
 
-        /***** Google Map API *****/
-    	$set_address = urlencode($addressintoapi);
-    	//$googlemapurl = "https://maps.googleapis.com/maps/api/geocode/json?address={$set_address}&key=Your_API_KEY&language=zh-TW";
-    	$geocoderesponsedata = file_get_contents($googlemapurl);
-    	$responsedata = json_decode($geocoderesponsedata, true);
-
-    	if($responsedata['status'] == 'OK') {
-    		$account = count($responsedata['results'][0]['address_components']);
-
-            $zip = isset($responsedata['result'][0]['address_components'][$account-2]['long_name']) ? 
-            $responsedata['result'][0]['address_components'][$account-2]['long_name'] : "";
-
-    		$latitude = isset($responsedata['results'][0]['geometry']['location']['lat']) ? 
-    		$responsedata['results'][0]['geometry']['location']['lat'] : "";
-
-    		$longitude = isset($responsedata['results'][0]['geometry']['location']['lng']) ? 
-    		$responsedata['results'][0]['geometry']['location']['lng'] : "";
-
-    		$full_address = isset($responsedata['results'][0]['formatted_address']) ? 
-    		$responsedata['results'][0]['formatted_address'] : "";
-    	}
+        /***** Library about using Google Geocode API *****/
+        $googleaddressinfo = GoogleGeocodeApiProcess($addressintoapi);
 
         /***** Return datatype by json *****/
     	$response_json = response()->json([
-            'zip' => $zip,
+            'zip' => $googleaddressinfo['zip'],
             'city' => $city,
             'area' => $area,
             'road' => $road,
@@ -120,13 +89,11 @@ class AddressController extends Controller
             'floor' => $floor,
             'address' => $info,
             'filename' => $filename,
-    		'latitude' => $latitude,
-    		'longitude' => $longitude,
-    		'address' => $full_address,
+    		'latitude' => $$googleaddressinfo['latitude'],
+    		'longitude' => $googleaddressinfo['longitude'],
+    		'full_address' => $googleaddressinfo['full_address'],
     	]);	
 
-    	//dd($response_json);	
-
-    	return view('googlemap', compact('response_json'));
+    	return $response_json;
     }
 }

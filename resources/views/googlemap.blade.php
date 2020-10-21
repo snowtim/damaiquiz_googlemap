@@ -85,7 +85,26 @@
 				zoom: 10
 			});
 
-			var address = '台北車站';
+			$.ajax({
+				method: "GET",
+				url: "/getaddress",
+				dataType: "JSON",
+				success: function(address) {
+					geocoder.geocode({'address': address.full_address}, function(result,status)) {
+						if(status == 'OK') {
+							map.setCenter(result[0].geometry.location);
+							var marker = new google.maps.Marker({
+								map: map,
+								position: result[0].geometry.location
+							});
+						} else {
+							console.log(status);
+						}
+					}
+				}
+			});
+
+			/*var address = '台北車站';
 
 			geocoder.geocode({'address': address}, function(result, status) {
 				if(status == 'OK') {
@@ -97,7 +116,7 @@
 				} else {
 					console.log(status);
 				}
-			});
+			});*/
 		}
 	</script-->
 
@@ -110,17 +129,26 @@
 				headers: {
 					'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
 				},
-				type: "POST",
+				method: "POST",
 				url: "/citylinkarea",
-				data: {City: city},
+				data: JSON.stringify({City: city}),
 				dataType: "JSON",
 				success: function(response_areas) {
+					//window.location.href="/citylinkarea";
 					var numofdata = response_areas.length;
+					
+					if(numofdata == undefined) {
+						console.log(response_areas);
 
-					$('#area').empty().append($('<option></option>').val('').text('-----'));
+						$('#area').empty().append($('<option></option>').val('').text('-----'));
+						$('#area').append($('<option></option>').val('').text(response_areas.error));
+					} else {					
+						console.log(response_areas);
+						$('#area').empty().append($('<option></option>').val('').text('-----'));
 
-					for(var i=0; i<numofdata; i++) {
-						$('#area').append($('<option></option>').val('').text(response_areas[i].area));
+						for(var i=0; i<numofdata; i++) {
+							$('#area').append($('<option></option>').val('').text(response_areas[i].area));
+						}
 					}
 				},
 				error: function() {
@@ -156,7 +184,7 @@
 		});*/
 	</script>
 
-	<script async defer src="https://maps.googleapis.com/maps/api/js?key=Your_API_Key&callback=initMap"></script>
+	<!--script async defer src="https://maps.googleapis.com/maps/api/js?key=Your_API_Key&callback=initMap"></script-->
 </body>
 
 </html>
