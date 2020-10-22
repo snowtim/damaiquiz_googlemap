@@ -131,7 +131,7 @@
 				},
 				method: "POST",
 				url: "/citylinkarea",
-				data: JSON.stringify({City: city}),
+				data: JSON.stringify({city: city}),
 				dataType: "JSON",
 				success: function(response_areas) {
 					//window.location.href="/citylinkarea";

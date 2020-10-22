@@ -22,13 +22,13 @@ class AddressController extends Controller
 
     //***** Get city data from front-end and return areas data(json) *****//
     public function citylinkarea(Request $request) {
-        if(!isset($request->City)) {
+        if(!isset($request->city)) {
             return $response_areas = response()->json([
                 'error' => 'Has no value!'
             ]);
         }
-        
-        $cityselect = DB::table('cities')->select('id')->where('city', '=', $request['City'])->first();
+
+        $cityselect = DB::table('cities')->select('id')->where('city', '=', $request['city'])->first();
         $areas = Area::where('city_id', '=', $cityselect->id)->get();
 
         /***** Test 1 *****/

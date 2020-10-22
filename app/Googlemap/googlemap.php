@@ -21,17 +21,13 @@ use Illuminate\Supports\Facades\Auth;
     	if($responsedata['status'] == 'OK') {
     		$account = count($responsedata['results'][0]['address_components']);
 
-            $zip = isset($responsedata['result'][0]['address_components'][$account-2]['long_name']) ? 
-            $responsedata['result'][0]['address_components'][$account-2]['long_name'] : "";
+            $zip = isset($responsedata['result'][0]['address_components'][$account-2]['long_name']) ? $responsedata['result'][0]['address_components'][$account-2]['long_name'] : "";
 
-    		$latitude = isset($responsedata['results'][0]['geometry']['location']['lat']) ? 
-    		$responsedata['results'][0]['geometry']['location']['lat'] : "";
+    		$latitude = isset($responsedata['results'][0]['geometry']['location']['lat']) ? $responsedata['results'][0]['geometry']['location']['lat'] : "";
 
-    		$longitude = isset($responsedata['results'][0]['geometry']['location']['lng']) ? 
-    		$responsedata['results'][0]['geometry']['location']['lng'] : "";
+    		$longitude = isset($responsedata['results'][0]['geometry']['location']['lng']) ? $responsedata['results'][0]['geometry']['location']['lng'] : "";
 
-    		$full_address = isset($responsedata['results'][0]['formatted_address']) ? 
-    		$responsedata['results'][0]['formatted_address'] : "";
+    		$full_address = isset($responsedata['results'][0]['formatted_address']) ? $responsedata['results'][0]['formatted_address'] : "";
     	}
 
     	$googleaddressinfo = array(
