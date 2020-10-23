@@ -3,7 +3,7 @@
 
 <head>
 	<meta charset="utf-8">
-	<meta name="csrf-token" content="{{ csrf_token() }}">
+	<!--meta name="csrf-token" content="{{ csrf_token() }}"-->
 
 	<title>damaiquiz Google Map</title>
 
@@ -28,35 +28,32 @@
 	<form class="box" method="GET" action="/getaddress">
 		<div class="address">
 			<span style="font-size: 0.7em">請選擇縣巿:</span>
-			<select id="city" name="city">	
+			<select id="city" name="cityid" required>	
 					<option>Select</option>
 				@foreach($cities as $city)
-					<option>{{ $city->city }}</option>
+					<option value="{{ $city->id }}">{{ $city->city }}</option>
 				@endforeach
 			</select>
 
 			<span style="font-size: 0.7em">請選擇鄉鎮巿區:</span>
-			<select id="area" name="area">
+			<select id="area" name="areafilename" required>
 					<option>Select</option>
-				@foreach($areas as $area)
-					<option>{{ $area->area }}</option>
-				@endforeach	
 			</select>
 
 			<span style="font-size: 0.7em">請選擇路(街):</span>
-			<select id="route" name="route">
+			<select id="road" name="road" required>
 					<option>Select</option>
 			</select>
 		</div>
 
 		<div class="address_la">
-			<input type="text" name="lane" style="width: 50px">
+			<input id="land" type="text" name="lane" style="width: 50px">
 			<label style="font-size: 0.7em">巷</label>
-			<input type="text" name="alley" style="width: 50px">
+			<input id="alley" type="text" name="alley" style="width: 50px">
 			<label style="font-size: 0.7em">弄</label>
-			<input type="text" name="no" style="width: 50px">
+			<input id="no" type="text" name="no" style="width: 50px">
 			<label style="font-size: 0.7em">號</label>
-			<input type="text" name="floor" style="width: 50px">
+			<input id="floor" type="text" name="floor" style="width: 50px">
 			<label style="font-size: 0.7em">樓</label>
 
 		<!-- Using for test Google Map API -->
@@ -65,7 +62,7 @@
 
 		<div class="other_info">
 			<label style="font-size: 0.7em">其他資訊:</label>
-			<input type="text" name="info">
+			<input id="info" type="text" name="info">
 		</div>
 
 			<button class="submit">search</button>
@@ -79,30 +76,71 @@
 
 		function initMap() {
 
-			geocoder = new google.maps.Geocoder();
+			//geocoder = new google.maps.Geocoder();
 			map = new google.maps.Map(document.getElementById('map'), {
-				//center: {lat: 24.001, lng: 120.885},
+				center: {lat: 24.001, lng: 120.885},
 				zoom: 10
 			});
 
-			$.ajax({
-				method: "GET",
-				url: "/getaddress",
-				dataType: "JSON",
-				success: function(address) {
-					geocoder.geocode({'address': address.full_address}, function(result,status)) {
-						if(status == 'OK') {
-							map.setCenter(result[0].geometry.location);
-							var marker = new google.maps.Marker({
-								map: map,
-								position: result[0].geometry.location
-							});
-						} else {
-							console.log(status);
-						}
+			$('#submit').click(function() {
+				var cityid = $('#city').val();
+				var addressfilename = $('#area').val();
+				var road = $('#road').val();
+				var lane = $('#lane').val();
+				var alley = $('#alley').val();
+				var no = $('#no').val();
+				var floor = $('#floor').val();
+				var info = $('#info').val();
+
+				$.ajax({
+					method: "GET",
+					url: "/getaddress",
+					data: {
+						cityid: cityid,
+						areafilename: areafilename,
+						road: road,
+						lane: lane,
+						alley: alley,
+						no: no,
+						floor: floor,
+						info: info	
+					},
+					contentType: "application/json",
+					success: function(response_json_address) {
+						/*geocoder.geocode({'address': response_json_address.full_address}, function(result, status) {
+							if(response_json_address) {
+								var mylocation = {
+									lat: response_json_address.longitude,
+									lng: response_json_address.latitude
+								};
+
+								map.setCenter(response_json_address.longitude, response_json_address.latitude);
+
+								var marker = new google.maps.Marker({
+									map: map,
+									position: mylocation 
+								});
+							} else {
+								console.log('error');
+							}
+						});*/
+
+						geocoder.geocode({'address': response_json_address.full_address}, function(result, status) {
+							if(status == 'OK') {
+								map.setCenter(result[0].geometry.location);
+
+								var marker = new google.maps.Marker({
+									map: map,
+									position: result[0].geometry.location 
+								});
+							} else {
+								console.log(status);
+							}
+						});
 					}
-				}
+				});
 			});
+			
 
 			/*var address = '台北車站';
 
@@ -123,65 +161,60 @@
 	<!-- Ajax dropdown list -->
 	<script>
 		$('#city').change(function() {
-			var city = $('#city').val();
+			var cityid = $('#city').val();
 
 			$.ajax({
-				headers: {
+				/*headers: {
 					'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-				},
-				method: "POST",
+				},*/
+				method: "GET",
 				url: "/citylinkarea",
-				data: JSON.stringify({city: city}),
-				dataType: "JSON",
+				data: {cityid: cityid},
+				contentType: "application/json",
 				success: function(response_areas) {
-					//window.location.href="/citylinkarea";
 					var numofdata = response_areas.length;
 					
 					if(numofdata == undefined) {
-						console.log(response_areas);
-
 						$('#area').empty().append($('<option></option>').val('').text('-----'));
-						$('#area').append($('<option></option>').val('').text(response_areas.error));
+						$('#area').append($('<option></option>').val(response_areas.error).text(response_areas.error));
 					} else {					
-						console.log(response_areas);
 						$('#area').empty().append($('<option></option>').val('').text('-----'));
 
 						for(var i=0; i<numofdata; i++) {
-							$('#area').append($('<option></option>').val('').text(response_areas[i].area));
+							$('#area').append($('<option></option>').val(response_areas[i].filename).text(response_areas[i].area));
 						}
+
+						$('#road').empty().append($('<option></option>').val('').text('-----'));
 					}
 				},
 				error: function() {
-					//window.location.href="/citylinkarea";
 					console.log('error');
 				}
 			});
 		});
 
-		/*$('#area').change(function() {
-			var area = $('#area').val();
+		$('#area').change(function() {
+			var areafilename = $('#area').val();
 
 			$.ajax({
-				type: "GET",
-				traditional: true,
-				url: "/arealinkroute",
-				data: {Area: area},
-				dataType: "JSON",
-				success: function(response_routes) {
-					var numofdata = response_routes.length;
+				method: "GET",
+				url: "/arealinkroad",
+				data: {areafilename: areafilename},
+				contentType: "application/json",
+				success: function(response_roads) {
+					var numofdata_r = response_roads.length;
 
-					$('#route').empty().append($('<option></option>').val('').text('-----'));
+					$('#road').empty().append($('<option></option>').val('').text('-----'));
 
-					for(var i=0; i<numofdata; i++) {
-						$('#route').append($('<option></option>').val('').text(response_routes[i].name));
+					for(var i=0; i<numofdata_r; i++) {
+						$('#road').append($('<option></option>').val(response_roads[i].name).text(response_roads[i].name));
 					}
 				},
 				error: function() {
-					window.location.href="/arealinkroute";
 					console.log('error');
 				}
 			});
-		});*/
+		});
 	</script>
 
 	<!--script async defer src="https://maps.googleapis.com/maps/api/js?key=Your_API_Key&callback=initMap"></script-->

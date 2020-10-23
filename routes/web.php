@@ -25,8 +25,8 @@ Auth::routes();
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 
 Route::get('/googlemap', 'App\Http\Controllers\AddressController@index');
-Route::get('/getaddress', 'App\Http\Controllers\AddressController@GetAddress');
+Route::get('/getaddress', 'App\Http\Controllers\AddressController@getaddress');
 
 /***** Using for Ajax transfer data to controller (dropdown select) *****/
-Route::post('/citylinkarea', 'App\Http\Controllers\AddressController@citylinkarea');
-//Route::get('/arealinkroute', 'App\Http\Controllers\AddressController@arealinkroute');
+Route::get('/citylinkarea', 'App\Http\Controllers\AddressController@citylinkarea');
+Route::get('/arealinkroad', 'App\Http\Controllers\AddressController@arealinkroad');

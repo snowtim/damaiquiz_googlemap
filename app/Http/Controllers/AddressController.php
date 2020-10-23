@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 
 use App\Models\Address;
 use App\Models\City;
@@ -15,85 +16,81 @@ class AddressController extends Controller
     //***** Direct to /googlemap *****//
     public function index() {
         $cities = City::all();
-        $areas = Area::all();
 
-    	return view('googlemap', compact('cities', 'areas'));
+    	return view('googlemap', compact('cities'));
     }
 
     //***** Get city data from front-end and return areas data(json) *****//
     public function citylinkarea(Request $request) {
-        if(!isset($request->city)) {
+        if(!isset($request['cityid'])) {
             return $response_areas = response()->json([
                 'error' => 'Has no value!'
             ]);
         }
 
-        $cityselect = DB::table('cities')->select('id')->where('city', '=', $request['city'])->first();
-        $areas = Area::where('city_id', '=', $cityselect->id)->get();
-
-        /***** Test 1 *****/
-        //$areas = Area::where('city_id', '=', 11)->get();
-
+        $areas = Area::where('city_id', '=', $request['cityid'])->get();
         $response_areas = response()->json($areas);
-
-        /***** Test 2 *****/
-        /*$response_areas = response()->json([
-            'a' => 'a'
-        ]);*/
-        //return view('googlemap', compact($response_areas)); 
 
         return $response_areas;
     }
 
-    //***** Get area data from front-end and return routes(roads) data(json) , not tested and completed  yet. *****//
-    public function arealinkroute(Request $request) {
-        $areaselect = DB::table('areas')->select('filename')->where('area', '=', $request['area'])->first();
-        $routes = RoadAndLane::where('filename_id', '=', 300)->get();
-        $response_routes = response()->json($routes);
+    //***** Get area data from front-end and return routes(roads) data(json) *****//
+    public function arealinkroad(Request $request) {
+        if(!isset($request['areafilename'])) {
+            return $response_routes = response()->json([
+                'error' => 'Has no value!'
+            ]);
+        }
 
-        return $response_routes;
+        $roads = RoadAndLane::where('filename_id', '=', $request['areafilename'])->get();
+        $response_roads = response()->json($roads);
+
+        return $response_roads;
     }
 
-    //***** Get address information and use Google Geocode API, and return data(json) , not compeleted yet. *****//
-    public function GetAddress(Request $request) {
-        /***** Get information from form by $request *****/
-        $city = isset($request['city']) ? $request['city'] : "";
-        $area = isset($request['area']) ? $request['area'] : "";
-        $road = isset($request['road']) ? $request['road'] : "";
-        $lane = isset($request['lane']) ? $request['lane'] : "";
-        $alley = isset($request['alley']) ? $request['alley'] : "";
-        $no = isset($request['no']) ? $request['no'] : "";
-        $floor = isset($request['floor']) ? $request['floor'] : "";
-        $info = isset($request['info']) ? $request['info'] : "";
+    //***** Get address information and use Google Geocode API, and return data(json) *****//
+    public function getaddress(Request $request) {
+        /***** Get information of address *****/
+        $getaddressinfo = AddressProcess($request);
 
-        $cityidselect = DB::table('cities')->select('id')->where('city', '=', $city)->first();
-        $cityid = $cityidselect->id;
-        $filenameselect = DB::table('areas')->join('cities', 'areas.city_id', '=', 'cities.id')->select('areas.filename')->where('cities.id', '=', $cityid)->where('areas.area', '=', $area)->first();
+        if(isset($getaddressinfo['type_error'])) {
+            return response()->json([
+                'type_error' => $getaddressinfo['type_error']
+            ]);
+        }
+
+        $cityselect =  City::where('id', '=', $getaddressinfo['cityid'])->first();
+        $city = $cityselect->city;
+
+        $areaselect = Area::where('filename', '=', $getaddressinfo['areafilename'])->first();
+        $area = $areaselect->area;
+
+        $filenameselect = DB::table('areas')->join('cities', 'areas.city_id', '=', 'cities.id')->select('areas.filename')->where('cities.id', '=', $getaddressinfo['cityid'])->where('areas.area', '=', $area)->first();
         $filename = $filenameselect->filename;
 
         /***** Connect become an address use into Google Geocode API *****/
-        $addressintoapi = trim($city.$area.$road.$lane.$alley.$no.$floor);
+        $addressintoapi = trim($city.$area.$getaddressinfo['road'].$getaddressinfo['lane'].$getaddressinfo['alley'].$getaddressinfo['no'].$getaddressinfo['floor']);
 
         /***** Library about using Google Geocode API *****/
         $googleaddressinfo = GoogleGeocodeApiProcess($addressintoapi);
 
         /***** Return datatype by json *****/
-    	$response_json = response()->json([
+        $response_json_address = response()->json([
             'zip' => $googleaddressinfo['zip'],
             'city' => $city,
             'area' => $area,
-            'road' => $road,
-            'lane' => $lane,
-            'alley' => $alley,
-            'no' => $no,
-            'floor' => $floor,
-            'address' => $info,
+            'road' => $getaddressinfo['road'],
+            'lane' => $getaddressinfo['lane_int'],
+            'alley' => $getaddressinfo['alley_int'],
+            'no' => $getaddressinfo['no_int'],
+            'floor' => $getaddressinfo['floor_int'],
+            'address' => $getaddressinfo['info'],
             'filename' => $filename,
-    		'latitude' => $$googleaddressinfo['latitude'],
-    		'longitude' => $googleaddressinfo['longitude'],
-    		'full_address' => $googleaddressinfo['full_address'],
-    	]);	
+            'latitude' => $googleaddressinfo['latitude'],
+            'longitude' => $googleaddressinfo['longitude'],
+            'full_address' => $googleaddressinfo['full_address'],
+        ]);
 
-    	return $response_json;
+    	return $response_json_address;
     }
 }
