@@ -2,9 +2,9 @@
 
 use Illuminate\Supports\Facades\Auth;
 
-//use App\Models\City;
-//use App\Models\Area;
-//use App\Models\RoadAndLane;
+use App\Models\City;
+use App\Models\Area;
+use App\Models\RoadAndLane;
 
 	//***** This function use for test *****/
 	/*function user_email() {
