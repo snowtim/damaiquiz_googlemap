@@ -1,17 +1,45 @@
 第3題部分
-以 '/routes/api.php' 開始,其中的 route 輸入後引導至 DataimportController.php
-將 address 的所有資料匯入 database, 另外我是將所有 address 的 JSON 檔放入一個資料夾一次匯入 
+相關檔案:
+
+route => /routes/api.php 
+controller => /app/Http/Controllers/DataimportController.php
+
+這個部分是將所有address.zip的資料匯入資料庫的程式,主要寫在controller裡
+
+migration路徑 => /database/migrations底下, 有三張
+2020_10_19_155952_create_cities_table => city的table
+2020_10_19_160031_create_areas_table => area的table
+2020_10_19_160938_create_road_and_lanes_table => road的table
 
 第4題部分
-前端有簡單做一下地址查詢的選單及輸入格可送出地址資料
-下方用 Google Map API 的部分有測試過是可以在頁面上出現地圖並標出定點位置(以上以台北車站為固定資料定點,目前註解)
-至於 Google Geocode API 以一次輸入整個地址方式測試也可以得到地址的所有資訊(目前註解)
-改用選單方式卡在連動有問題一直不能正常選地址
-所以目前查詢功能還沒完成
-其中試過固定取出的資料或是傳一個定好的 JSON 資料選單會跟著變動
-可是只要改成非固定方式(指Ajax傳data到後端後使用傳來的資料方式)就會跑到 console.log() 自設的 error 訊息
-有發現傳到後端的資料是空的,根本沒傳到後端,所以出現只有用假資料才會回傳的現象
-找了很久還是找不出資料傳不過去的原因　
+相關檔案：
+
+route => /routes/web.php
+view => /resouces/views/googlemap.blade.php    (為測試簡單做的)
+controller => /app/Http/Controllers/AddressController.php
+model => /app/Models/City.php
+	     /app/Models/Area.php
+	     /app/Models/RoadAndLane.php
+Library => /app/Googlemap/googlemap.php
+
+Library 裡頭有3支function
+1.
+AddressProcess($request) => 將從Form進來的 request先整理出要的部分再return整理後會用到的結果以array回傳, 其中開頭的validator會先就用戶端key的資料做驗證, 不符型態則回傳error的訊息回去
+
+GoogleGeocodeApiProcess($addressintoapi) => 將地址送入後由Google Geocode API處理後得到地址的詳細資訊, 再把所需的經緯度之類資料整理後以array回傳
+
+這2支配合送回AddressController.php,將前端所需資料整理後以json格式回傳給前端
+這麼做似乎有點怪,因為沒直接回傳json的結果回去,而是把2支的片段資訊都先以array回傳後才在controller做最後整理以json回傳,而且Library似乎應該是不論如何就是所要的那個結果
+會用這樣分開主要是覺得會與資料庫有關的部分應該只留在controller才這樣分,把整理從Form來的資料及運用Google Geocode API兩件事分開
+
+2.
+getaddress($request) => 其實就是所有部分全部放在1支function裡面,它的結果和另外2支配合用在AddressController.php的結果是一樣的,而且直接回傳整理好的json格式資訊給前端,不過function很大一包加上把會和資料庫有關的部分包含進來自覺也不是很理想,不過跑完出來就是所要output給前端的東西
+
+另外validator用戶端未輸入的部分目前允許有null值
+
+為方便看結果http method都先使用GET
+
+謝謝　
 
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400"></a></p>
 
