@@ -1,22 +1,16 @@
 <?php
 
-use Illuminate\Supports\Facades\Auth;
-
 use App\Models\City;
 use App\Models\Area;
 use App\Models\RoadAndLane;
-
-	//***** This function use for test *****/
-	/*function user_email() {
-		$user = 'Hello';
-
-		return $user;
-	}*/
 
     //***** Address process *****//
     function AddressProcess($request) {
         /***** Information type validator *****/
         $validator = Validator::make($request->all(), [
+            'cityid' => ['int', 'required'],
+            'areafilename' => ['string', 'required'],
+            'road' => ['string', 'required'],
             'lane' => ['int', 'nullable'],
             'alley' => ['int', 'nullable'],
             'no' => ['int', 'nullable'],
@@ -26,7 +20,7 @@ use App\Models\RoadAndLane;
 
         if($validator->fails()) {
             $error = array(
-                'type_error' => 'In lane, alley, no, floor, please enter integer. Other information enter string'
+                'type_error' => 'You require select city, area and road. In lane, alley, no, floor, please enter type of integer. Other information enter type of string.'
             );
 
             return $error;
